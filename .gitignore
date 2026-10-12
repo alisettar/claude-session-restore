@@ -1,0 +1,4 @@
+# makineye özel oturum kayıtları ve yedekler asla repoya girmez
+session-registry/
+*.bak-*
+*.tmp
