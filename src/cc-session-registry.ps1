@@ -27,7 +27,8 @@ $p = Get-Process -Id $PID
 $claude = $null
 for ($i = 0; $i -lt 6 -and $p; $i++) {
     $p = $p.Parent
-    if ($p.Name -eq 'claude') { $claude = $p; break }
+    # Otomatik güncelleme çalışan binary'yi claude.exe.old.<ts>.<pid> olarak yeniden adlandırır → süreç adı da değişir
+    if ($p.Name -match '^claude(\.exe\.old\.[\d.]+)?$') { $claude = $p; break }
 }
 
 # Hangi launcher ile açıldı? gecko.ps1 yerel vLLM'e yönlendirmek için ANTHROPIC_BASE_URL set eder
