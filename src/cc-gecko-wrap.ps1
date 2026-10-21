@@ -19,7 +19,8 @@ if (-not $env:WT_SESSION -or $headless -or ($picker -and -not $sid)) { & $gecko 
 $extra = @()
 if (-not $sid) { $sid = [guid]::NewGuid().ToString(); $extra = @('--session-id', $sid) }
 
-$dir  = Join-Path $HOME '.claude\session-registry'
+. (Join-Path $PSScriptRoot 'cc-common.ps1')
+$dir  = $CcRegistryDir
 $file = Join-Path $dir "$($env:WT_SESSION).json"
 New-Item -ItemType Directory -Force $dir | Out-Null
 $shell = Get-Process -Id $PID
@@ -31,13 +32,15 @@ $shell = Get-Process -Id $PID
     configDir   = $env:CLAUDE_CONFIG_DIR
     claudePid   = $shell.Id            # gecko bu shell içinde çalışır; shell yaşıyorsa oturum yaşıyor
     claudeStart = $shell.StartTime.ToUniversalTime().ToString('o')
+    created     = (Get-Date).ToUniversalTime().ToString('o')
     updated     = (Get-Date).ToUniversalTime().ToString('o')
 } | ConvertTo-Json | Set-Content $file -Encoding utf8
+Update-CcLiveSnapshot
 
 $env:CC_RESTORE_GUARD = '1'   # gecko'nun açtığı alt shell'ler geri yükleme yapmasın
 try { & $gecko @extra @args }
 finally {
     Remove-Item Env:CC_RESTORE_GUARD -ErrorAction SilentlyContinue
     $cur = Get-Content $file -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json
-    if ($cur.sessionId -eq $sid) { Remove-Item $file -Force -ErrorAction SilentlyContinue }
+    if ($cur.sessionId -eq $sid) { Remove-Item $file -Force -ErrorAction SilentlyContinue; Update-CcLiveSnapshot }
 }

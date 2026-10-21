@@ -31,6 +31,26 @@ paneller) ve her sekmede açık olan **Claude Code konuşmasını** geri getirir
 Konuşmaların kendisi zaten Claude Code tarafından `~/.claude/projects/` altında saklanır; bu araç
 yalnızca "hangi sekmede hangi konuşma vardı" bilgisini tutar.
 
+### Çökme / elektrik kesintisi
+
+Windows Terminal düzeni **yalnızca düzgün kapanışta** kaydeder. Mavi ekran veya elektrik kesintisinde
+sekmeler eski `WT_SESSION`'larla gelmez ve yukarıdaki yol hiçbir oturumu bulamaz. Bunun için:
+
+1. Hook her olayda o an çalışan oturumların listesini `~/.claude/session-registry/live.json`'a yazar.
+2. Açılıştan sonraki ilk shell, `live.json` açılıştan eskiyse onu atomik olarak devralır ve
+   `cc-recover.ps1`'i gizli başlatır.
+3. `cc-recover.ps1` 90 sn'ye kadar bekler: listedeki oturumlardan biri canlanırsa WT düzeni geri gelmiş
+   demektir, hiçbir şey yapmaz. Hiçbiri canlanmazsa (çökme) hepsini **`claude-restore` adlı yeni bir
+   WT penceresinde**, ilk açılış sırasına göre sekme olarak açar. Günlük: `session-registry/recover.log`.
+
+Çökmede pencere/sekme yerleşimi korunamaz (WT bunu dışarı vermez); oturumlar tek pencerede gelir.
+
+Elle kurtarma (ör. listeyi kendin hazırladıysan):
+
+```powershell
+pwsh -File ~/.claude-tools/session-restore/cc-recover.ps1 -Snapshot <liste.json> -NoWait
+```
+
 ## Kurulum
 
 Gereksinim: Windows Terminal, PowerShell 7 (`pwsh`), Claude Code.
@@ -96,12 +116,18 @@ bu dosyayı tamamen yok sayar.
   kalmış cevap devam etmez.
 - Bir sekmeyi pencereden (X ile) kapatırsan kaydı kalır ama o `WT_SESSION` bir daha açılmayacağı için
   zararsızdır; 30 günden eski kayıtlar otomatik silinir.
+- Çökme kurtarması son hook olayındaki listeyi kullanır: son mesajdan sonra X ile kapatılan bir sekme
+  yeniden açılabilir, son mesajdan sonra açılıp hiç mesaj yazılmamış bir oturum da (SessionStart'ı
+  yazıldığı için) listededir.
+- `--resume` konuşmayı açıldığı klasörün proje dizininde arar; oturum içinde `cd` yapılmışsa betikler
+  konuşmanın durduğu üst klasörü kendisi bulur.
+- Her hook çağrısı ~0,4 sn sürer (PowerShell başlangıcı + anlık görüntü); Claude'un diğer hook'larıyla paralel çalışır.
 - gecko oturumunda `/clear` yapılırsa sarmalayıcının bildiği id eskide kalır; geri yüklemede
   `/clear` öncesi konuşma açılır.
 
 ## Sorun giderme
 
-Bir sekme geri gelmediyse o sekmede:
+Önce `~/.claude/session-registry/recover.log`'a bak. Bir sekme geri gelmediyse o sekmede:
 
 ```powershell
 $env:WT_SESSION                                   # bu sekmenin kimliği
