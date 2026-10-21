@@ -23,6 +23,17 @@ function Resolve-CcResumeCwd([string]$SessionId, [string]$Cwd, [string]$ConfigDi
     return $Cwd
 }
 
+# Bir Claude oturumunun içinden çalıştırıldığında (ör. elle kurtarma) Claude'un çalışma zamanı değişkenleri
+# (CLAUDECODE, CLAUDE_CODE_CHILD_SESSION, CLAUDE_CODE_SESSION_ID, ...) wt.exe üzerinden yeni sekmelere geçer;
+# açılan oturum kendini alt oturum sanar ve konuşma kaydını KAPATIR. Kullanıcının kalıcı (User/Machine)
+# olarak tanımladığı değişkenler hariç tüm CLAUDE* değişkenlerini bu süreçten temizler.
+function Clear-CcInheritedEnv {
+    Get-ChildItem Env: | Where-Object Name -match '^CLAUDE' | ForEach-Object {
+        $persistent = [Environment]::GetEnvironmentVariable($_.Name, 'User') ?? [Environment]::GetEnvironmentVariable($_.Name, 'Machine')
+        if ($null -eq $persistent) { Remove-Item "Env:$($_.Name)" }
+    }
+}
+
 function Get-CcEntries {
     Get-ChildItem $CcRegistryDir -Filter '*-*-*-*-*.json' -ErrorAction SilentlyContinue | ForEach-Object {
         try { Get-Content $_.FullName -Raw | ConvertFrom-Json } catch { }

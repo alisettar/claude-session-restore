@@ -33,6 +33,7 @@
     Set-Location $cwd
     Write-Host "↻ Claude oturumu geri yükleniyor: $($e.sessionId)  ($cwd)" -ForegroundColor Cyan
     $prevCfg = $env:CLAUDE_CONFIG_DIR
+    Clear-CcInheritedEnv
     $env:CC_RESTORE_GUARD = '1'
     if ($e.configDir) { $env:CLAUDE_CONFIG_DIR = $e.configDir }
     try {

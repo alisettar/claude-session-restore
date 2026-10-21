@@ -33,6 +33,7 @@ if (-not $NoWait) {
 }
 
 $alive  = Get-AliveSessionIds
+Clear-CcInheritedEnv   # wt.exe yeni sekmelere bu sürecin ortamını aktarır
 $opener = Join-Path $PSScriptRoot 'cc-open.ps1'
 $seen   = @{}
 foreach ($s in $sessions) {

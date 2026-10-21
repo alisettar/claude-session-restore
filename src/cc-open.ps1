@@ -7,6 +7,7 @@ param(
     [string]$Launcher = 'claude'
 )
 . (Join-Path $PSScriptRoot 'cc-common.ps1')
+Clear-CcInheritedEnv   # ikinci savunma hattı: alt oturum işareti miras kalmışsa kayıt kapanmasın
 $Cwd = Resolve-CcResumeCwd $SessionId $Cwd $ConfigDir
 if (Test-Path $Cwd) { Set-Location $Cwd }
 Write-Host "↻ Claude oturumu geri yükleniyor: $SessionId  ($Cwd)" -ForegroundColor Cyan
